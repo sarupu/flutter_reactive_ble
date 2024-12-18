@@ -250,34 +250,45 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
     widget.discoveredServices.asMap().forEach(
           (index, service) => panels.add(
             ExpansionPanel(
-              body: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Padding(
-                    padding: EdgeInsetsDirectional.only(start: 16.0),
-                    child: Text(
-                      'Characteristics',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: service.characteristics
-                        .map(_characteristicTile)
-                        .toList(),
-                  ),
-                ],
-              ),
-              headerBuilder: (context, isExpanded) => ListTile(
+              headerBuilder: (BuildContext context, bool isExpanded) =>
+                  ListTile(
                 title: Text(
                   '${service.id}',
                   style: const TextStyle(fontSize: 14),
                 ),
               ),
               isExpanded: _expandedItems.contains(index),
+              body: ListTile(
+                title: const Text("Characteristics"),
+                subtitle: Column(
+                  // crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children:
+                      service.characteristics.map(_characteristicTile).toList(),
+                ),
+              ),
+
+              // Column(
+              //   crossAxisAlignment: CrossAxisAlignment.start,
+              //   mainAxisSize: MainAxisSize.min,
+              //   children: [
+              //     const Padding(
+              //       padding: EdgeInsetsDirectional.only(start: 16.0),
+              //       child: Text(
+              //         'Characteristics',
+              //         style: TextStyle(
+              //           fontWeight: FontWeight.bold,
+              //         ),
+              //       ),
+              //     ),
+              //     Column(
+              //       mainAxisSize: MainAxisSize.min,
+              //       children: service.characteristics
+              //           .map(_characteristicTile)
+              //           .toList(),
+              //     ),
+              //   ],
+              // ),
             ),
           ),
         );
@@ -299,7 +310,7 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
             child: ExpansionPanelList(
               expansionCallback: (int index, bool isExpanded) {
                 setState(() {
-                  if (isExpanded) {
+                  if (!isExpanded) {
                     _expandedItems.remove(index);
                   } else {
                     _expandedItems.add(index);

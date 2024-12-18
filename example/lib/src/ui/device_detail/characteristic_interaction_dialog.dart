@@ -14,7 +14,8 @@ class CharacteristicInteractionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Consumer<BleDeviceInteractor>(
-        builder: (context, interactor, _) => _CharacteristicInteractionDialog(characteristic: characteristic),
+        builder: (context, interactor, _) =>
+            _CharacteristicInteractionDialog(characteristic: characteristic),
       );
 }
 
@@ -27,10 +28,12 @@ class _CharacteristicInteractionDialog extends StatefulWidget {
   final Characteristic characteristic;
 
   @override
-  _CharacteristicInteractionDialogState createState() => _CharacteristicInteractionDialogState();
+  _CharacteristicInteractionDialogState createState() =>
+      _CharacteristicInteractionDialogState();
 }
 
-class _CharacteristicInteractionDialogState extends State<_CharacteristicInteractionDialog> {
+class _CharacteristicInteractionDialogState
+    extends State<_CharacteristicInteractionDialog> {
   late String readOutput;
   late String writeOutput;
   late String subscribeOutput;
@@ -71,7 +74,8 @@ class _CharacteristicInteractionDialogState extends State<_CharacteristicInterac
     });
   }
 
-  List<int> _parseInput() => textEditingController.text.split(',').map(int.parse).toList();
+  List<int> _parseInput() =>
+      textEditingController.text.runes.map((char) => char).toList();
 
   Future<void> writeCharacteristicWithResponse() async {
     await widget.characteristic.write(_parseInput());
@@ -102,13 +106,10 @@ class _CharacteristicInteractionDialogState extends State<_CharacteristicInterac
               border: OutlineInputBorder(),
               labelText: 'Value',
             ),
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: false,
-            ),
+            maxLength: 10,
           ),
         ),
-        Row(
+        Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ElevatedButton(
@@ -129,8 +130,9 @@ class _CharacteristicInteractionDialogState extends State<_CharacteristicInterac
 
   List<Widget> get readSection => [
         sectionHeader('Read characteristic'),
-        Row(
+        Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ElevatedButton(
               onPressed: readCharacteristic,
@@ -143,8 +145,9 @@ class _CharacteristicInteractionDialogState extends State<_CharacteristicInterac
 
   List<Widget> get subscribeSection => [
         sectionHeader('Subscribe / notify'),
-        Row(
+        Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ElevatedButton(
               onPressed: subscribeCharacteristic,
