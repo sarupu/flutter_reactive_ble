@@ -42,11 +42,12 @@ class _CharacteristicInteractionDialogState
 
   @override
   void initState() {
+    super.initState();
+    subscribeStream = null;
     readOutput = '';
     writeOutput = '';
     subscribeOutput = '';
     textEditingController = TextEditingController();
-    super.initState();
   }
 
   @override
@@ -97,35 +98,43 @@ class _CharacteristicInteractionDialogState
       );
 
   List<Widget> get writeSection => [
-        sectionHeader('Write characteristic'),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: TextField(
-            controller: textEditingController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Value',
+        if (widget.characteristic.isWritableWithResponse ||
+            widget.characteristic.isWritableWithoutResponse) ...[
+          divider,
+          sectionHeader('Write characteristic'),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: TextField(
+              controller: textEditingController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Value',
+              ),
+              maxLength: 10,
             ),
-            maxLength: 10,
           ),
-        ),
+        ],
         Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            ElevatedButton(
-              onPressed: writeCharacteristicWithResponse,
-              child: const Text('With response'),
-            ),
-            ElevatedButton(
-              onPressed: writeCharacteristicWithoutResponse,
-              child: const Text('Without response'),
-            ),
+            if (widget.characteristic.isWritableWithoutResponse)
+              ElevatedButton(
+                onPressed: writeCharacteristicWithResponse,
+                child: const Text('With response'),
+              ),
+            if (widget.characteristic.isWritableWithResponse)
+              ElevatedButton(
+                onPressed: writeCharacteristicWithoutResponse,
+                child: const Text('Without response'),
+              ),
           ],
         ),
-        Padding(
-          padding: const EdgeInsetsDirectional.only(top: 8.0),
-          child: Text('Output: $writeOutput'),
-        ),
+        if (widget.characteristic.isWritableWithResponse ||
+            widget.characteristic.isWritableWithoutResponse)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(top: 8.0),
+            child: Text('Output: $writeOutput'),
+          ),
       ];
 
   List<Widget> get readSection => [
@@ -180,13 +189,16 @@ class _CharacteristicInteractionDialogState
                   widget.characteristic.id.toString(),
                 ),
               ),
-              divider,
-              ...readSection,
-              divider,
+              if (widget.characteristic.isReadable) ...[
+                divider,
+                ...readSection,
+              ],
               ...writeSection,
-              divider,
-              ...subscribeSection,
-              divider,
+              if (widget.characteristic.isNotifiable) ...[
+                divider,
+                ...subscribeSection,
+                divider,
+              ],
               Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
