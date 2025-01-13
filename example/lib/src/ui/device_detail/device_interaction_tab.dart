@@ -234,8 +234,10 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
   Widget _characteristicTile(Characteristic characteristic) => ListTile(
         onTap: () => showDialog<void>(
           context: context,
-          builder: (context) =>
-              CharacteristicInteractionDialog(characteristic: characteristic),
+          builder: (context) => CharacteristicInteractionDialog(
+            characteristic: characteristic,
+            key: UniqueKey(),
+          ),
         ),
         title: Text(
           '${characteristic.id}\n(${_characteristicSummary(characteristic)})',

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -48,6 +49,10 @@ class _CharacteristicInteractionDialogState
     writeOutput = '';
     subscribeOutput = '';
     textEditingController = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      readCharacteristic();
+      subscribeCharacteristic();
+    });
   }
 
   @override
@@ -60,7 +65,7 @@ class _CharacteristicInteractionDialogState
   Future<void> subscribeCharacteristic() async {
     subscribeStream = widget.characteristic.subscribe().listen((event) {
       setState(() {
-        subscribeOutput = event.toString();
+        subscribeOutput = utf8.decode(event);
       });
     });
     setState(() {
@@ -71,7 +76,7 @@ class _CharacteristicInteractionDialogState
   Future<void> readCharacteristic() async {
     final result = await widget.characteristic.read();
     setState(() {
-      readOutput = result.toString();
+      readOutput = utf8.decode(result);
     });
   }
 
@@ -101,7 +106,7 @@ class _CharacteristicInteractionDialogState
         if (widget.characteristic.isWritableWithResponse ||
             widget.characteristic.isWritableWithoutResponse) ...[
           divider,
-          sectionHeader('Write characteristic'),
+          sectionHeader('Write characteristic:'),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: TextField(
@@ -120,36 +125,46 @@ class _CharacteristicInteractionDialogState
             if (widget.characteristic.isWritableWithoutResponse)
               ElevatedButton(
                 onPressed: writeCharacteristicWithResponse,
-                child: const Text('With response'),
+                child: const Text('With response / Change'),
               ),
             if (widget.characteristic.isWritableWithResponse)
               ElevatedButton(
                 onPressed: writeCharacteristicWithoutResponse,
-                child: const Text('Without response'),
+                child: const Text('Without response / Change'),
               ),
           ],
         ),
-        if (widget.characteristic.isWritableWithResponse ||
-            widget.characteristic.isWritableWithoutResponse)
-          Padding(
-            padding: const EdgeInsetsDirectional.only(top: 8.0),
-            child: Text('Output: $writeOutput'),
-          ),
+        // if (widget.characteristic.isWritableWithResponse ||
+        //     widget.characteristic.isWritableWithoutResponse)
+        //   Padding(
+        //     padding: const EdgeInsetsDirectional.only(top: 8.0),
+        //     child: Text('Output: $writeOutput'),
+        //   ),
       ];
 
   List<Widget> get readSection => [
-        sectionHeader('Read characteristic'),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ElevatedButton(
-              onPressed: readCharacteristic,
-              child: const Text('Read'),
-            ),
-            Text('Output: $readOutput'),
-          ],
-        ),
+        sectionHeader('Read characteristic:'),
+        Padding(
+          padding: const EdgeInsets.only(top: 5.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 5.0),
+                child: Text(
+                  "${subscribeOutput == 'Notification set' ? readOutput : subscribeOutput}",
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              )
+              // ElevatedButton(
+              //   onPressed: readCharacteristic,
+              //   child: const Text('Read'),
+              // ),
+            ],
+          ),
+        )
       ];
 
   List<Widget> get subscribeSection => [
@@ -179,26 +194,27 @@ class _CharacteristicInteractionDialogState
           child: ListView(
             shrinkWrap: true,
             children: [
-              const Text(
-                'Select an operation',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  widget.characteristic.id.toString(),
-                ),
-              ),
+              // const Text(
+              //   'Select an operation',
+              //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              // ),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(vertical: 8.0),
+              //   child: Text(
+              //     widget.characteristic.id.toString(),
+              //   ),
+              // ),
               if (widget.characteristic.isReadable) ...[
                 divider,
                 ...readSection,
               ],
               ...writeSection,
-              if (widget.characteristic.isNotifiable) ...[
-                divider,
-                ...subscribeSection,
-                divider,
-              ],
+              // if (widget.characteristic.isNotifiable) ...[
+              //   divider,
+              //   ...subscribeSection,
+              //   divider,
+              // ],
+
               Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
