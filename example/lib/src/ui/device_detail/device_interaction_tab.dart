@@ -115,35 +115,35 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
           SliverList(
             delegate: SliverChildListDelegate.fixed(
               [
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                      top: 8.0, bottom: 16.0, start: 16.0),
-                  child: Text(
-                    "ID: ${widget.viewModel.deviceId}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 16.0),
-                  child: Text(
-                    "Connectable: ${widget.viewModel.connectableStatus}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 16.0),
-                  child: Text(
-                    "Connection: ${widget.viewModel.connectionStatus}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 16.0),
-                  child: Text(
-                    "Rssi: $_rssi dB",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
+                // Padding(
+                //   padding: const EdgeInsetsDirectional.only(
+                //       top: 8.0, bottom: 16.0, start: 16.0),
+                //   child: Text(
+                //     "ID: ${widget.viewModel.deviceId}",
+                //     style: const TextStyle(fontWeight: FontWeight.bold),
+                //   ),
+                // ),
+                // Padding(
+                //   padding: const EdgeInsetsDirectional.only(start: 16.0),
+                //   child: Text(
+                //     "Connectable: ${widget.viewModel.connectableStatus}",
+                //     style: const TextStyle(fontWeight: FontWeight.bold),
+                //   ),
+                // ),
+                // Padding(
+                //   padding: const EdgeInsetsDirectional.only(start: 16.0),
+                //   child: Text(
+                //     "Connection: ${widget.viewModel.connectionStatus}",
+                //     style: const TextStyle(fontWeight: FontWeight.bold),
+                //   ),
+                // ),
+                // Padding(
+                //   padding: const EdgeInsetsDirectional.only(start: 16.0),
+                //   child: Text(
+                //     "Rssi: $_rssi dB",
+                //     style: const TextStyle(fontWeight: FontWeight.bold),
+                //   ),
+                // ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
                   child: Wrap(
