@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_reactive_ble_example/src/ble/ble_device_connector.dart';
 import 'package:flutter_reactive_ble_example/src/ble/ble_device_interactor.dart';
+import 'package:flutter_reactive_ble_example/utils/uuid_converter.dart';
 import 'package:functional_data/functional_data.dart';
 import 'package:provider/provider.dart';
 
@@ -253,7 +254,7 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
               headerBuilder: (BuildContext context, bool isExpanded) =>
                   ListTile(
                 title: Text(
-                  '${service.id}',
+                  '${convertTo16BitUUID(service.id)}',
                   style: const TextStyle(fontSize: 14),
                 ),
               ),
