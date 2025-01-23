@@ -87,7 +87,7 @@ class _DeviceInteractionTab extends StatefulWidget {
 class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
   late List<Service> discoveredServices;
 
-  int _rssi = 0;
+  // int _rssi = 0;
 
   @override
   void initState() {
@@ -102,12 +102,12 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
     });
   }
 
-  Future<void> readRssi() async {
-    final rssi = await widget.viewModel.readRssi();
-    setState(() {
-      _rssi = rssi;
-    });
-  }
+  // Future<void> readRssi() async {
+  //   final rssi = await widget.viewModel.readRssi();
+  //   setState(() {
+  //     _rssi = rssi;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) => CustomScrollView(
@@ -167,11 +167,11 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
                             : null,
                         child: const Text("Discover Services"),
                       ),
-                      ElevatedButton(
-                        onPressed:
-                            widget.viewModel.deviceConnected ? readRssi : null,
-                        child: const Text("Get RSSI"),
-                      ),
+                      // ElevatedButton(
+                      //   onPressed:
+                      //       widget.viewModel.deviceConnected ? readRssi : null,
+                      //   child: const Text("Get RSSI"),
+                      // ),
                     ],
                   ),
                 ),
