@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_reactive_ble_example/src/ble/ble_device_connector.dart';
@@ -302,26 +304,126 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
   @override
   Widget build(BuildContext context) => widget.discoveredServices.isEmpty
       ? const SizedBox()
-      : SafeArea(
+      : const SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsetsDirectional.only(
+            padding: EdgeInsetsDirectional.only(
               top: 20.0,
               start: 20.0,
               end: 20.0,
             ),
-            child: ExpansionPanelList(
-              expansionCallback: (int index, bool isExpanded) {
-                setState(() {
-                  if (!isExpanded) {
-                    _expandedItems.remove(index);
-                  } else {
-                    _expandedItems.add(index);
-                  }
-                });
-              },
-              children: buildPanels(),
-            ),
+            child: VehicleDataDisplay(),
+
+            // ExpansionPanelList(
+            //   expansionCallback: (int index, bool isExpanded) {
+            //     setState(() {
+            //       if (!isExpanded) {
+            //         _expandedItems.remove(index);
+            //       } else {
+            //         _expandedItems.add(index);
+            //       }
+            //     });
+            //   },
+            //   children: buildPanels(),
+            // ),
           ),
         );
+}
+
+class VehicleDataDisplay extends StatefulWidget {
+  const VehicleDataDisplay({super.key});
+
+  @override
+  State<VehicleDataDisplay> createState() => _VehicleDataDisplayState();
+}
+
+class _VehicleDataDisplayState extends State<VehicleDataDisplay> {
+  Future<String> _fetchData(String dataType) async {
+    await Future<void>.delayed(Durations.long2);
+    switch (dataType) {
+      case 'clock':
+        return DateTime.now().toString().substring(11, 19);
+      case 'date':
+        return DateTime.now().toString().substring(0, 10);
+      case 'odometer':
+        return '${Random().nextInt(4801) + 150} Km';
+      case 'trip':
+        return '${Random().nextInt(150)} Km';
+      case 'warnings':
+        return (DateTime.now().millisecond % 2 == 0) ? "OK" : "Yağ Kontrolü";
+      case 'nextMaintenance':
+        return DateTime.now()
+            .add(const Duration(days: 4))
+            .toString()
+            .substring(0, 10);
+      case 'speed':
+        return '40 km/h';
+      case 'batteryA':
+        return '64%';
+      case 'batteryB':
+        return '100%';
+      default:
+        return 'Bilinmeyen';
+    }
+  }
+
+  Widget _buildDataRow(String label, Future<String> dataFuture) => Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.blue,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        margin: const EdgeInsets.only(bottom: 5),
+        padding: const EdgeInsets.all(8.0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            children: [
+              Text(
+                '$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FutureBuilder<String>(
+                  future: dataFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.hasData) {
+                      return Text(snapshot.data!);
+                    } else {
+                      return const Text('No data');
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDataRow('Saat', _fetchData('clock')),
+            _buildDataRow('Tarih', _fetchData('date')),
+            _buildDataRow('Odometre km', _fetchData('odometer')),
+            _buildDataRow('Tripmetre km', _fetchData('trip')),
+            _buildDataRow('Uyarılar', _fetchData('warnings')),
+            _buildDataRow(
+                'Bir sonraki bakım zamanı', _fetchData('nextMaintenance')),
+            _buildDataRow('Motorun anlık hızı', _fetchData('speed')),
+            _buildDataRow('Batarya A', _fetchData('batteryA')),
+            _buildDataRow('Batarya B', _fetchData('batteryB')),
+          ],
+        ),
+      );
 }
