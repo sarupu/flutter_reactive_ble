@@ -91,6 +91,8 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
 
   // int _rssi = 0;
 
+  bool _isServiceMode = false;
+
   @override
   void initState() {
     discoveredServices = [];
@@ -169,6 +171,22 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
                             : null,
                         child: const Text("Discover Services"),
                       ),
+                      Container(
+                        child: Row(
+                          children: [
+                            const Text("Service Mode:",
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Switch(
+                              value: _isServiceMode,
+                              onChanged: (newValue) {
+                                setState(() {
+                                  _isServiceMode = newValue;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      )
                       // ElevatedButton(
                       //   onPressed:
                       //       widget.viewModel.deviceConnected ? readRssi : null,
@@ -179,6 +197,7 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
                 ),
                 if (widget.viewModel.deviceConnected)
                   _ServiceDiscoveryList(
+                    isServiceMode: _isServiceMode,
                     deviceId: widget.viewModel.deviceId,
                     discoveredServices: discoveredServices,
                   ),
@@ -191,11 +210,13 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
 
 class _ServiceDiscoveryList extends StatefulWidget {
   const _ServiceDiscoveryList({
+    required this.isServiceMode,
     required this.deviceId,
     required this.discoveredServices,
     Key? key,
   }) : super(key: key);
 
+  final bool isServiceMode;
   final String deviceId;
   final List<Service> discoveredServices;
 
@@ -304,15 +325,17 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
   @override
   Widget build(BuildContext context) => widget.discoveredServices.isEmpty
       ? const SizedBox()
-      : const SafeArea(
+      : SafeArea(
           top: false,
           child: Padding(
-            padding: EdgeInsetsDirectional.only(
+            padding: const EdgeInsetsDirectional.only(
               top: 20.0,
               start: 20.0,
               end: 20.0,
             ),
-            child: VehicleDataDisplay(),
+            child: widget.isServiceMode
+                ? const ServiceVehicleDataDisplay()
+                : const UserVehicleDataDisplay(),
 
             // ExpansionPanelList(
             //   expansionCallback: (int index, bool isExpanded) {
@@ -330,14 +353,14 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
         );
 }
 
-class VehicleDataDisplay extends StatefulWidget {
-  const VehicleDataDisplay({super.key});
+class UserVehicleDataDisplay extends StatefulWidget {
+  const UserVehicleDataDisplay({super.key});
 
   @override
-  State<VehicleDataDisplay> createState() => _VehicleDataDisplayState();
+  State<UserVehicleDataDisplay> createState() => _UserVehicleDataDisplayState();
 }
 
-class _VehicleDataDisplayState extends State<VehicleDataDisplay> {
+class _UserVehicleDataDisplayState extends State<UserVehicleDataDisplay> {
   Future<String> _fetchData(String dataType) async {
     await Future<void>.delayed(Durations.long2);
     switch (dataType) {
@@ -367,7 +390,8 @@ class _VehicleDataDisplayState extends State<VehicleDataDisplay> {
     }
   }
 
-  Widget _buildDataRow(String label, Future<String> dataFuture) => Container(
+  Widget _buildUserDataRow(String label, Future<String> dataFuture) =>
+      Container(
         decoration: BoxDecoration(
           border: Border.all(
             color: Colors.blue,
@@ -413,16 +437,120 @@ class _VehicleDataDisplayState extends State<VehicleDataDisplay> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDataRow('Saat', _fetchData('clock')),
-            _buildDataRow('Tarih', _fetchData('date')),
-            _buildDataRow('Odometre km', _fetchData('odometer')),
-            _buildDataRow('Tripmetre km', _fetchData('trip')),
-            _buildDataRow('Uyarılar', _fetchData('warnings')),
-            _buildDataRow(
+            _buildUserDataRow('Saat', _fetchData('clock')),
+            _buildUserDataRow('Tarih', _fetchData('date')),
+            _buildUserDataRow('Odometre km', _fetchData('odometer')),
+            _buildUserDataRow('Tripmetre km', _fetchData('trip')),
+            _buildUserDataRow('Uyarılar', _fetchData('warnings')),
+            _buildUserDataRow(
                 'Bir sonraki bakım zamanı', _fetchData('nextMaintenance')),
-            _buildDataRow('Motorun anlık hızı', _fetchData('speed')),
-            _buildDataRow('Batarya A', _fetchData('batteryA')),
-            _buildDataRow('Batarya B', _fetchData('batteryB')),
+            _buildUserDataRow('Motorun anlık hızı', _fetchData('speed')),
+            _buildUserDataRow('Batarya A', _fetchData('batteryA')),
+            _buildUserDataRow('Batarya B', _fetchData('batteryB')),
+          ],
+        ),
+      );
+}
+
+class ServiceVehicleDataDisplay extends StatefulWidget {
+  const ServiceVehicleDataDisplay({super.key});
+
+  @override
+  State<ServiceVehicleDataDisplay> createState() =>
+      _ServiceVehicleDataDisplayState();
+}
+
+class _ServiceVehicleDataDisplayState extends State<ServiceVehicleDataDisplay> {
+  Future<String> _fetchData(String dataType) async {
+    await Future<void>.delayed(Durations.long2);
+    switch (dataType) {
+      case 'bluetooth':
+        return 'OK';
+      case 'battery_voltage_a':
+        return '${Random().nextInt(100)}%';
+      case 'battery_voltage_b':
+        return '${Random().nextInt(100)}%';
+      case 'current_reading':
+        return '64 A';
+      case 'converter_voltage':
+        return '700 V';
+      case 'mib_temperatures':
+        return 'M: 112 C, I: 30 C, B: 52 C';
+      case 'brake_indicator':
+        return 'OK';
+      case 'throttle_position':
+        return '6 ∠';
+      case 'self_diagnostic':
+        return 'OK';
+      default:
+        return 'Bilinmeyen';
+    }
+  }
+
+  Widget _buildServiceDataRow(String label, Future<String> dataFuture) =>
+      Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.blue,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        margin: const EdgeInsets.only(bottom: 5),
+        padding: const EdgeInsets.all(8.0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            children: [
+              Text(
+                '$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FutureBuilder<String>(
+                  future: dataFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.hasData) {
+                      return Text(snapshot.data!);
+                    } else {
+                      return const Text('No data');
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildServiceDataRow('Bluetooth', _fetchData('bluetooth')),
+            _buildServiceDataRow(
+                'Battery Voltage A', _fetchData('battery_voltage_a')),
+            _buildServiceDataRow(
+                'Battery Voltage B', _fetchData('battery_voltage_b')),
+            _buildServiceDataRow(
+                'Current Reading', _fetchData('current_reading')),
+            _buildServiceDataRow(
+                'AC/DC Converter Voltage', _fetchData('converter_voltage')),
+            _buildServiceDataRow(
+                'MIB Temperatures', _fetchData('mib_temperatures')),
+            _buildServiceDataRow(
+                'Brake Indicator', _fetchData('brake_indicator')),
+            _buildServiceDataRow(
+                'Throttle Position', _fetchData('throttle_position')),
+            _buildServiceDataRow(
+                'Self Diagnostic', _fetchData('self_diagnostic')),
           ],
         ),
       );
