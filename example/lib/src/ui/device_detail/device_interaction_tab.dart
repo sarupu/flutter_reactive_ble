@@ -65,9 +65,13 @@ class DeviceInteractionViewModel extends $DeviceInteractionViewModel {
   bool get deviceConnected =>
       connectionStatus == DeviceConnectionState.connected;
 
-  void connect() {
-    deviceConnector.connect(deviceId);
-  }
+  // Future<void> connect() async {
+  //   await deviceConnector.connect(deviceId);
+  //   // print(discoveredServices)
+  //   if (deviceConnected) {
+  //     await discoverServices();
+  //   }
+  // }
 
   void disconnect() {
     deviceConnector.disconnect(deviceId);
@@ -99,7 +103,8 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
     super.initState();
   }
 
-  Future<void> discoverServices() async {
+  Future<void> connect() async {
+    await widget.viewModel.deviceConnector.connect(widget.viewModel.deviceId);
     final result = await widget.viewModel.discoverServices();
     setState(() {
       discoveredServices = result;
@@ -154,9 +159,8 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
                     alignment: WrapAlignment.spaceEvenly,
                     children: <Widget>[
                       ElevatedButton(
-                        onPressed: !widget.viewModel.deviceConnected
-                            ? widget.viewModel.connect
-                            : null,
+                        onPressed:
+                            !widget.viewModel.deviceConnected ? connect : null,
                         child: const Text("Connect"),
                       ),
                       ElevatedButton(
@@ -165,12 +169,12 @@ class _DeviceInteractionTabState extends State<_DeviceInteractionTab> {
                             : null,
                         child: const Text("Disconnect"),
                       ),
-                      ElevatedButton(
-                        onPressed: widget.viewModel.deviceConnected
-                            ? discoverServices
-                            : null,
-                        child: const Text("Discover Services"),
-                      ),
+                      // ElevatedButton(
+                      //   onPressed: widget.viewModel.deviceConnected
+                      //       ? discoverServices
+                      //       : null,
+                      //   child: const Text("Discover Services"),
+                      // ),
                       Container(
                         child: Row(
                           children: [
