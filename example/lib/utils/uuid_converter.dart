@@ -77,16 +77,43 @@ Map<String, String> servicesUuids = {
   '0xDEAD': 'Max Speed',
 };
 
-String convertTo16BitUUID(Uuid someId) {
-  // Define the Bluetooth Base UUID suffix
-  final uuid = someId.toString().toUpperCase();
-  const bluetoothBaseUUID = '-0000-1000-8000-00805F9B34FB';
-  if (uuid.endsWith(bluetoothBaseUUID) && uuid.startsWith('0000')) {
-    // Extract the 16-bit UUID part (the `xxxx` part)
-    final uuid16 = uuid.substring(4, 8);
-    return servicesUuids['0x$uuid16'] ??
-        "Unknown Service"; // Add the "0x" prefix
+Map<String, String> characteristicsUuids = {
+  '9615bb5a-f40c-47b5-9556-2c90c724e571': 'Timestamp',
+  '9615bb5a-f40c-47b5-9556-2c90c724e572': 'Odometer',
+  '9615bb5a-f40c-47b5-9556-2c90c724e573': 'Tripmeter',
+  '9615bb5a-f40c-47b5-9556-2c90c724e574': 'Warning 1',
+  '9615bb5a-f40c-47b5-9556-2c90c724e575': 'Warning 2',
+  '9615bb5a-f40c-47b5-9556-2c90c724e576': 'Warning 3',
+  '9615bb5a-f40c-47b5-9556-2c90c724e577': 'NextMaintenance',
+  '9615bb5a-f40c-47b5-9556-2c90c724e578': 'CurrentMotorSpeed',
+  '9615bb5a-f40c-47b5-9556-2c90c724e579': 'Battery1',
+  '9615bb5a-f40c-47b5-9556-2c90c724e510': 'Battery2',
+  'e38a1810-f738-491c-ac4a-83357266cf11': 'CurrentReading',
+  'e38a1810-f738-491c-ac4a-83357266cf12': 'DCDCConverterVoltage',
+  'e38a1810-f738-491c-ac4a-83357266cf13': 'Battery1Voltage',
+  'e38a1810-f738-491c-ac4a-83357266cf14': 'Battery2Voltage',
+  'e38a1810-f738-491c-ac4a-83357266cf15': 'MotorTemperature',
+  'e38a1810-f738-491c-ac4a-83357266cf16': 'InverterTemperature',
+  'e38a1810-f738-491c-ac4a-83357266cf17': 'Battery1Temperature',
+  'e38a1810-f738-491c-ac4a-83357266cf18': 'Battery2Temperature',
+  'e38a1810-f738-491c-ac4a-83357266cf19': 'ThrottlePosition',
+};
+
+String? convertTo16BitUUID(Uuid someId) {
+  final convertedId = someId.toString();
+  if (characteristicsUuids[convertedId] != null) {
+    return characteristicsUuids[convertedId];
   } else {
-    throw ArgumentError('The provided UUID is not convertible to 16-bit.');
+    return "Unknown Characteristic";
   }
+  // final uuid = someId.toString().toUpperCase();
+  // const bluetoothBaseUUID = '-0000-1000-8000-00805F9B34FB';
+  // if (uuid.endsWith(bluetoothBaseUUID) && uuid.startsWith('0000')) {
+  //   // Extract the 16-bit UUID part (the `xxxx` part)
+  //   final uuid16 = uuid.substring(4, 8);
+  //   return servicesUuids['0x$uuid16'] ??
+  //       "Unknown Service"; // Add the "0x" prefix
+  // } else {
+  //   throw ArgumentError('The provided UUID is not convertible to 16-bit.');
+  // }
 }

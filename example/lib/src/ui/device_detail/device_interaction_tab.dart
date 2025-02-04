@@ -1,4 +1,5 @@
-import 'dart:math';
+import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -229,101 +230,143 @@ class _ServiceDiscoveryList extends StatefulWidget {
 }
 
 class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
-  late final List<int> _expandedItems;
+  // late final List<int> _expandedItems;
 
   @override
   void initState() {
-    _expandedItems = [];
+    // _expandedItems = [];
     super.initState();
   }
 
-  String _characteristicSummary(Characteristic c) {
-    final props = <String>[];
-    if (c.isReadable) {
-      props.add("read");
-    }
-    if (c.isWritableWithoutResponse) {
-      props.add("write without response");
-    }
-    if (c.isWritableWithResponse) {
-      props.add("write with response");
-    }
-    if (c.isNotifiable) {
-      props.add("notify");
-    }
-    if (c.isIndicatable) {
-      props.add("indicate");
-    }
+  // String _characteristicSummary(Characteristic c) {
+  //   final props = <String>[];
+  //   if (c.isReadable) {
+  //     props.add("read");
+  //   }
+  //   if (c.isWritableWithoutResponse) {
+  //     props.add("write without response");
+  //   }
+  //   if (c.isWritableWithResponse) {
+  //     props.add("write with response");
+  //   }
+  //   if (c.isNotifiable) {
+  //     props.add("notify");
+  //   }
+  //   if (c.isIndicatable) {
+  //     props.add("indicate");
+  //   }
 
-    return props.join("\n");
+  //   return props.join("\n");
+  // }
+
+  // Widget _characteristicTile(Characteristic characteristic) => ListTile(
+  //       onTap: () => showDialog<void>(
+  //         context: context,
+  //         builder: (context) => CharacteristicInteractionDialog(
+  //           characteristic: characteristic,
+  //           key: UniqueKey(),
+  //         ),
+  //       ),
+  //       title: Text(
+  //         '${characteristic.id}\n(${_characteristicSummary(characteristic)})',
+  //         style: const TextStyle(
+  //           fontSize: 14,
+  //         ),
+  //       ),
+  //     );
+
+  List<Widget> buildWidgets() {
+    final characteristics = widget.isServiceMode
+        ? widget.discoveredServices
+            .singleWhere((service) =>
+                service.id.toString() == "e38a1810-f738-491c-ac4a-83357266cf10")
+            .characteristics
+        : widget.discoveredServices
+            .singleWhere((service) =>
+                service.id.toString() == "9615bb5a-f40c-47b5-9556-2c90c724e57c")
+            .characteristics;
+
+    return characteristics.map(_buildServiceDataRow).toList();
   }
 
-  Widget _characteristicTile(Characteristic characteristic) => ListTile(
-        onTap: () => showDialog<void>(
-          context: context,
-          builder: (context) => CharacteristicInteractionDialog(
-            characteristic: characteristic,
-            key: UniqueKey(),
+  Widget _buildServiceDataRow(Characteristic c) => Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.blue,
+            width: 2.0,
           ),
+          borderRadius: BorderRadius.circular(8.0),
         ),
-        title: Text(
-          '${characteristic.id}\n(${_characteristicSummary(characteristic)})',
-          style: const TextStyle(
-            fontSize: 14,
+        margin: const EdgeInsets.only(bottom: 5),
+        padding: const EdgeInsets.all(8.0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            children: [
+              Text(
+                '${convertTo16BitUUID(c.id)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FutureBuilder<String>(
+                  future: _readCharacteristic(c).timeout(
+                    const Duration(milliseconds: 150),
+                    onTimeout: () => _readCharacteristic(c, retryCount: 1),
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.hasData) {
+                      return Text(snapshot.data!);
+                    } else {
+                      return const Text('No data');
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       );
 
-  List<ExpansionPanel> buildPanels() {
-    final panels = <ExpansionPanel>[];
+  Future<String> _readCharacteristic(Characteristic c,
+      {int retryCount = 0}) async {
+    try {
+      final value = await c.read().timeout(
+        const Duration(milliseconds: 150),
+        onTimeout: () async {
+          if (retryCount < 3) {
+            return c.read();
+          } else {
+            throw TimeoutException('Read characteristic timed out');
+          }
+        },
+      );
 
-    widget.discoveredServices.asMap().forEach(
-          (index, service) => panels.add(
-            ExpansionPanel(
-              headerBuilder: (BuildContext context, bool isExpanded) =>
-                  ListTile(
-                title: Text(
-                  '${convertTo16BitUUID(service.id)}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ),
-              isExpanded: _expandedItems.contains(index),
-              body: ListTile(
-                title: const Text("Characteristics"),
-                subtitle: Column(
-                  // crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children:
-                      service.characteristics.map(_characteristicTile).toList(),
-                ),
-              ),
-
-              // Column(
-              //   crossAxisAlignment: CrossAxisAlignment.start,
-              //   mainAxisSize: MainAxisSize.min,
-              //   children: [
-              //     const Padding(
-              //       padding: EdgeInsetsDirectional.only(start: 16.0),
-              //       child: Text(
-              //         'Characteristics',
-              //         style: TextStyle(
-              //           fontWeight: FontWeight.bold,
-              //         ),
-              //       ),
-              //     ),
-              //     Column(
-              //       mainAxisSize: MainAxisSize.min,
-              //       children: service.characteristics
-              //           .map(_characteristicTile)
-              //           .toList(),
-              //     ),
-              //   ],
-              // ),
-            ),
-          ),
-        );
-
-    return panels;
+      if (c.id.toString() == "9615bb5a-f40c-47b5-9556-2c90c724e571") {
+        // Convert hexadecimal to decimal
+        final epoch = int.parse(
+            value.reversed.map((e) => e.toRadixString(16)).join(),
+            radix: 16);
+        // Convert epoch to Unix time
+        final dateTime = DateTime.fromMillisecondsSinceEpoch(epoch * 1000);
+        print(value);
+        print(epoch);
+        return dateTime.toString();
+      } else {
+        // Default to utf8.decode
+        return utf8.decode(value);
+      }
+    } catch (e) {
+      if (retryCount < 3) {
+        return _readCharacteristic(c, retryCount: retryCount + 1);
+      } else {
+        rethrow;
+      }
+    }
   }
 
   @override
@@ -337,225 +380,212 @@ class _ServiceDiscoveryListState extends State<_ServiceDiscoveryList> {
               start: 20.0,
               end: 20.0,
             ),
-            child: widget.isServiceMode
-                ? const ServiceVehicleDataDisplay()
-                : const UserVehicleDataDisplay(),
-
-            // ExpansionPanelList(
-            //   expansionCallback: (int index, bool isExpanded) {
-            //     setState(() {
-            //       if (!isExpanded) {
-            //         _expandedItems.remove(index);
-            //       } else {
-            //         _expandedItems.add(index);
-            //       }
-            //     });
-            //   },
-            //   children: buildPanels(),
-            // ),
+            child: Column(
+              children: buildWidgets(),
+            ),
           ),
         );
 }
 
-class UserVehicleDataDisplay extends StatefulWidget {
-  const UserVehicleDataDisplay({super.key});
+// class UserVehicleDataDisplay extends StatefulWidget {
+//   const UserVehicleDataDisplay({super.key});
 
-  @override
-  State<UserVehicleDataDisplay> createState() => _UserVehicleDataDisplayState();
-}
+//   @override
+//   State<UserVehicleDataDisplay> createState() => _UserVehicleDataDisplayState();
+// }
 
-class _UserVehicleDataDisplayState extends State<UserVehicleDataDisplay> {
-  Future<String> _fetchData(String dataType) async {
-    await Future<void>.delayed(Durations.long2);
-    switch (dataType) {
-      case 'clock':
-        return DateTime.now().toString().substring(11, 19);
-      case 'date':
-        return DateTime.now().toString().substring(0, 10);
-      case 'odometer':
-        return '${Random().nextInt(4801) + 150} Km';
-      case 'trip':
-        return '${Random().nextInt(150)} Km';
-      case 'warnings':
-        return (DateTime.now().millisecond % 2 == 0) ? "OK" : "Yağ Kontrolü";
-      case 'nextMaintenance':
-        return DateTime.now()
-            .add(const Duration(days: 4))
-            .toString()
-            .substring(0, 10);
-      case 'speed':
-        return '40 km/h';
-      case 'batteryA':
-        return '64%';
-      case 'batteryB':
-        return '100%';
-      default:
-        return 'Bilinmeyen';
-    }
-  }
+// class _UserVehicleDataDisplayState extends State<UserVehicleDataDisplay> {
+//   Future<String> _fetchData(String dataType) async {
+//     await Future<void>.delayed(Durations.long2);
+//     switch (dataType) {
+//       case 'clock':
+//         return DateTime.now().toString().substring(11, 19);
+//       case 'date':
+//         return DateTime.now().toString().substring(0, 10);
+//       case 'odometer':
+//         return '${Random().nextInt(4801) + 150} Km';
+//       case 'trip':
+//         return '${Random().nextInt(150)} Km';
+//       case 'warnings':
+//         return (DateTime.now().millisecond % 2 == 0) ? "OK" : "Yağ Kontrolü";
+//       case 'nextMaintenance':
+//         return DateTime.now()
+//             .add(const Duration(days: 4))
+//             .toString()
+//             .substring(0, 10);
+//       case 'speed':
+//         return '40 km/h';
+//       case 'batteryA':
+//         return '64%';
+//       case 'batteryB':
+//         return '100%';
+//       default:
+//         return 'Bilinmeyen';
+//     }
+//   }
 
-  Widget _buildUserDataRow(String label, Future<String> dataFuture) =>
-      Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.blue,
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        margin: const EdgeInsets.only(bottom: 5),
-        padding: const EdgeInsets.all(8.0),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            children: [
-              Text(
-                '$label:',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FutureBuilder<String>(
-                  future: dataFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const LinearProgressIndicator();
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.hasData) {
-                      return Text(snapshot.data!);
-                    } else {
-                      return const Text('No data');
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+//   Widget _buildUserDataRow(String label, Future<String> dataFuture) =>
+//       Container(
+//         decoration: BoxDecoration(
+//           border: Border.all(
+//             color: Colors.blue,
+//             width: 2.0,
+//           ),
+//           borderRadius: BorderRadius.circular(8.0),
+//         ),
+//         margin: const EdgeInsets.only(bottom: 5),
+//         padding: const EdgeInsets.all(8.0),
+//         child: Padding(
+//           padding: const EdgeInsets.symmetric(vertical: 8.0),
+//           child: Row(
+//             children: [
+//               Text(
+//                 '$label:',
+//                 style: const TextStyle(fontWeight: FontWeight.bold),
+//               ),
+//               const SizedBox(width: 10),
+//               Expanded(
+//                 child: FutureBuilder<String>(
+//                   future: dataFuture,
+//                   builder: (context, snapshot) {
+//                     if (snapshot.connectionState == ConnectionState.waiting) {
+//                       return const LinearProgressIndicator();
+//                     } else if (snapshot.hasError) {
+//                       return Text('Error: ${snapshot.error}');
+//                     } else if (snapshot.hasData) {
+//                       return Text(snapshot.data!);
+//                     } else {
+//                       return const Text('No data');
+//                     }
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       );
 
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildUserDataRow('Saat', _fetchData('clock')),
-            _buildUserDataRow('Tarih', _fetchData('date')),
-            _buildUserDataRow('Odometre km', _fetchData('odometer')),
-            _buildUserDataRow('Tripmetre km', _fetchData('trip')),
-            _buildUserDataRow('Uyarılar', _fetchData('warnings')),
-            _buildUserDataRow(
-                'Bir sonraki bakım zamanı', _fetchData('nextMaintenance')),
-            _buildUserDataRow('Motorun anlık hızı', _fetchData('speed')),
-            _buildUserDataRow('Batarya A', _fetchData('batteryA')),
-            _buildUserDataRow('Batarya B', _fetchData('batteryB')),
-          ],
-        ),
-      );
-}
+//   @override
+//   Widget build(BuildContext context) => Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             _buildUserDataRow('Saat', _fetchData('clock')),
+//             _buildUserDataRow('Tarih', _fetchData('date')),
+//             _buildUserDataRow('Odometre km', _fetchData('odometer')),
+//             _buildUserDataRow('Tripmetre km', _fetchData('trip')),
+//             _buildUserDataRow('Uyarılar', _fetchData('warnings')),
+//             _buildUserDataRow(
+//                 'Bir sonraki bakım zamanı', _fetchData('nextMaintenance')),
+//             _buildUserDataRow('Motorun anlık hızı', _fetchData('speed')),
+//             _buildUserDataRow('Batarya A', _fetchData('batteryA')),
+//             _buildUserDataRow('Batarya B', _fetchData('batteryB')),
+//           ],
+//         ),
+//       );
+// }
 
-class ServiceVehicleDataDisplay extends StatefulWidget {
-  const ServiceVehicleDataDisplay({super.key});
+// class ServiceVehicleDataDisplay extends StatefulWidget {
+//   const ServiceVehicleDataDisplay({super.key});
 
-  @override
-  State<ServiceVehicleDataDisplay> createState() =>
-      _ServiceVehicleDataDisplayState();
-}
+//   @override
+//   State<ServiceVehicleDataDisplay> createState() =>
+//       _ServiceVehicleDataDisplayState();
+// }
 
-class _ServiceVehicleDataDisplayState extends State<ServiceVehicleDataDisplay> {
-  Future<String> _fetchData(String dataType) async {
-    await Future<void>.delayed(Durations.long2);
-    switch (dataType) {
-      case 'bluetooth':
-        return 'OK';
-      case 'battery_voltage_a':
-        return '${Random().nextInt(100)}%';
-      case 'battery_voltage_b':
-        return '${Random().nextInt(100)}%';
-      case 'current_reading':
-        return '64 A';
-      case 'converter_voltage':
-        return '700 V';
-      case 'mib_temperatures':
-        return 'M: 112 C, I: 30 C, B: 52 C';
-      case 'brake_indicator':
-        return 'OK';
-      case 'throttle_position':
-        return '6 ∠';
-      case 'self_diagnostic':
-        return 'OK';
-      default:
-        return 'Bilinmeyen';
-    }
-  }
+// class _ServiceVehicleDataDisplayState extends State<ServiceVehicleDataDisplay> {
+//   Future<String> _fetchData(String dataType) async {
+//     await Future<void>.delayed(Durations.long2);
+//     switch (dataType) {
+//       case 'bluetooth':
+//         return 'OK';
+//       case 'battery_voltage_a':
+//         return '${Random().nextInt(100)}%';
+//       case 'battery_voltage_b':
+//         return '${Random().nextInt(100)}%';
+//       case 'current_reading':
+//         return '64 A';
+//       case 'converter_voltage':
+//         return '700 V';
+//       case 'mib_temperatures':
+//         return 'M: 112 C, I: 30 C, B: 52 C';
+//       case 'brake_indicator':
+//         return 'OK';
+//       case 'throttle_position':
+//         return '6 ∠';
+//       case 'self_diagnostic':
+//         return 'OK';
+//       default:
+//         return 'Bilinmeyen';
+//     }
+//   }
 
-  Widget _buildServiceDataRow(String label, Future<String> dataFuture) =>
-      Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.blue,
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        margin: const EdgeInsets.only(bottom: 5),
-        padding: const EdgeInsets.all(8.0),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            children: [
-              Text(
-                '$label:',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FutureBuilder<String>(
-                  future: dataFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const LinearProgressIndicator();
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.hasData) {
-                      return Text(snapshot.data!);
-                    } else {
-                      return const Text('No data');
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+//   Widget _buildServiceDataRow(String label, Future<String> dataFuture) =>
+//       Container(
+//         decoration: BoxDecoration(
+//           border: Border.all(
+//             color: Colors.blue,
+//             width: 2.0,
+//           ),
+//           borderRadius: BorderRadius.circular(8.0),
+//         ),
+//         margin: const EdgeInsets.only(bottom: 5),
+//         padding: const EdgeInsets.all(8.0),
+//         child: Padding(
+//           padding: const EdgeInsets.symmetric(vertical: 8.0),
+//           child: Row(
+//             children: [
+//               Text(
+//                 '$label:',
+//                 style: const TextStyle(fontWeight: FontWeight.bold),
+//               ),
+//               const SizedBox(width: 10),
+//               Expanded(
+//                 child: FutureBuilder<String>(
+//                   future: dataFuture,
+//                   builder: (context, snapshot) {
+//                     if (snapshot.connectionState == ConnectionState.waiting) {
+//                       return const LinearProgressIndicator();
+//                     } else if (snapshot.hasError) {
+//                       return Text('Error: ${snapshot.error}');
+//                     } else if (snapshot.hasData) {
+//                       return Text(snapshot.data!);
+//                     } else {
+//                       return const Text('No data');
+//                     }
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       );
 
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildServiceDataRow('Bluetooth', _fetchData('bluetooth')),
-            _buildServiceDataRow(
-                'Battery Voltage A', _fetchData('battery_voltage_a')),
-            _buildServiceDataRow(
-                'Battery Voltage B', _fetchData('battery_voltage_b')),
-            _buildServiceDataRow(
-                'Current Reading', _fetchData('current_reading')),
-            _buildServiceDataRow(
-                'AC/DC Converter Voltage', _fetchData('converter_voltage')),
-            _buildServiceDataRow(
-                'MIB Temperatures', _fetchData('mib_temperatures')),
-            _buildServiceDataRow(
-                'Brake Indicator', _fetchData('brake_indicator')),
-            _buildServiceDataRow(
-                'Throttle Position', _fetchData('throttle_position')),
-            _buildServiceDataRow(
-                'Self Diagnostic', _fetchData('self_diagnostic')),
-          ],
-        ),
-      );
-}
+//   @override
+//   Widget build(BuildContext context) => Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             _buildServiceDataRow('Bluetooth', _fetchData('bluetooth')),
+//             _buildServiceDataRow(
+//                 'Battery Voltage A', _fetchData('battery_voltage_a')),
+//             _buildServiceDataRow(
+//                 'Battery Voltage B', _fetchData('battery_voltage_b')),
+//             _buildServiceDataRow(
+//                 'Current Reading', _fetchData('current_reading')),
+//             _buildServiceDataRow(
+//                 'AC/DC Converter Voltage', _fetchData('converter_voltage')),
+//             _buildServiceDataRow(
+//                 'MIB Temperatures', _fetchData('mib_temperatures')),
+//             _buildServiceDataRow(
+//                 'Brake Indicator', _fetchData('brake_indicator')),
+//             _buildServiceDataRow(
+//                 'Throttle Position', _fetchData('throttle_position')),
+//             _buildServiceDataRow(
+//                 'Self Diagnostic', _fetchData('self_diagnostic')),
+//           ],
+//         ),
+//       );
+// }
